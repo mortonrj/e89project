@@ -5,14 +5,30 @@ import fetcher as Fetcher
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import Queue
+from bs4 import BeautifulSoup
+from urllib2 import urlopen
+import urllib
+
+def make_soup(url):
+    html = urlopen(url).read()
+    return BeautifulSoup(html)
+
+def get_images(url):
+    soup = make_soup(url)
+    images = [img for img in soup.findAll('img')]
+
+    #compile our unicode list of image links
+    image_links = [each.get('src') for each in images]
+
+    return image_links
 
 # Returns list containing all hyperlinks
-def run_crawler(current_page, G):
+def run_crawler(current_page, path_length):
     q = Queue.Queue()
     q.put(current_page)
-    visited = set(current_page)
-
-    while len(visited) <= 2000:
+    visited = {current_page}
+    links = []
+    while len(visited) <= path_length:
         page = q.get()
         visited.add(page)
         links = Fetcher.fetch_links(page)
@@ -21,15 +37,16 @@ def run_crawler(current_page, G):
 
         for l in links:
             if 'caltech.edu' in l:
-                G.add_edge(page, l)
                 if l not in visited:
                     q.put(l)
 
+                    image = get_images(l)
+                    print image
 
 def main():
-    G = nx.DiGraph()
+    path_length = 10
     current_page = "http://www.caltech.edu/"
-    run_crawler(current_page, G)
+    run_crawler(current_page, path_length)
 
 
 main()
