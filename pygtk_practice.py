@@ -11,8 +11,8 @@ black = 0, 0, 0
 screen = pygame.display.set_mode(size)
 
 
-image2 = pygame.image.load("./image/virtual_images/dice.png")
-image = pygame.image.load("./image/virtual_images/panda.jpg")
+#image2 = pygame.image.load("./image/virtual_images/dice.png")
+#image = pygame.image.load("./image/virtual_images/panda.jpg")
 
 # start music
 pygame.mixer.pre_init(44100, -16, 2, 2048) # setup mixer to avoid sound lag
@@ -29,13 +29,12 @@ delete_queue = Queue.Queue()
 image_dir = "./image/virtual_images"
 os.chdir(image_dir)
 for file in glob.glob("*.png"):
-    image = pygame.image.load('./image/virtual_images/' +  file)
-    image_queue.put(image, image.get_rect())
-for file in glob.glob("*.jpg"):
+    image = pygame.image.load(file)
+    image_queue.put((image, image.get_rect()))
     print(file)
-image_queue.put((image, image.get_rect()))
-image_queue.put((image2, image2.get_rect()))
-
+for file in glob.glob("*.jpg"):
+    image = pygame.image.load(file)
+    image_queue.put((image, image.get_rect()))
 
 while 1:
     # Checking for quit event, and if so exiting
