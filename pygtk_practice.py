@@ -5,14 +5,10 @@ import Queue
 import glob, os
 
 pygame.init()
-size = width, height = 600, 600
+size = width, height = 1026, 768
 black = 0, 0, 0
 
 screen = pygame.display.set_mode(size)
-
-
-#image2 = pygame.image.load("./image/virtual_images/dice.png")
-#image = pygame.image.load("./image/virtual_images/panda.jpg")
 
 # start music
 pygame.mixer.pre_init(44100, -16, 2, 2048) # setup mixer to avoid sound lag
