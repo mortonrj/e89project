@@ -3,6 +3,8 @@ import networkx as nx
 import numpy as np
 import fetcher as Fetcher
 import matplotlib.mlab as mlab
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import Queue
 from bs4 import BeautifulSoup
@@ -23,11 +25,13 @@ def get_images(url):
     return image_links
 
 # Returns list containing all hyperlinks
-def run_crawler(current_page, path_length):
+def run_crawler(current_pages, path_length):
     q = Queue.Queue()
-    q.put(current_page)
-    visited = {current_page}
-    links = []
+    visited = set()
+    for page in current_pages:
+        q.put(page)
+        visited.add(page)
+    images = []
     while len(visited) <= path_length:
         page = q.get()
         visited.add(page)
@@ -35,18 +39,21 @@ def run_crawler(current_page, path_length):
         if links is None:
             continue
 
-        for l in links:
-            if 'caltech.edu' in l:
+        for l in links[:10]:
+            if 'caltech.edu' in l and l != 'http://hr.caltech.edu/work/job_openings':
                 if l not in visited:
                     q.put(l)
-
-                    image = get_images(l)
-                    print image
+                    images.extend(get_images(l))
+        return q, images
 
 def main():
     path_length = 10
-    current_page = "http://www.caltech.edu/"
-    run_crawler(current_page, path_length)
+    current_pages = ["http://www.caltech.edu/"]
+    run_crawler(current_pages, 1)
+
+# Helpful links:
+# https://www.daniweb.com/programming/software-development/code/440946/display-an-image-from-a-url-tkinter-python
+# https://www.daniweb.com/programming/software-development/code/467528/show-internet-image-with-tkinter
 
 
 main()
