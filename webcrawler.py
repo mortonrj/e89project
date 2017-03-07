@@ -17,8 +17,8 @@ import urllib
 def download_images(url_list, batch_size=50, screen_size=None):
     """ Returns queue of URLs"""
     q, images = run_crawler(url_list, 1)
-    if len(images) > 50:
-        images = images[:50]
+    if len(images) > batch_size:
+        images = images[:batch_size]
     for url in images:
         cwd = os.getcwd()
         print(cwd)
