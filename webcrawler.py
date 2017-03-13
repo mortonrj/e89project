@@ -14,10 +14,18 @@ import urllib
 
 def download_images(url_list, batch_size=50, screen_size=None):
     """ Returns queue of URLs"""
+    cwd = os.getcwd()
+    print('\n\n\n')
+    print(url_list, batch_size, screen_size)
+    print(cwd)
+    print(url_list)
     q, images = run_crawler(url_list, 1)
+    print(q)
     if len(images) > batch_size:
         images = images[:batch_size]
     for url in images:
+        cwd = os.getcwd()
+        print(cwd)
         image = urllib.URLopener()
         image_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         image.retrieve(url, './webcrawled_images/' + image_name + '.jpg')
@@ -56,7 +64,7 @@ def run_crawler(current_pages, path_length):
                 if l not in visited:
                     q.put(l)
                     images.extend(get_images(l))
-        return q, l
+        return q, images
 
 def main():
     path_length = 10
