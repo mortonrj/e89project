@@ -1,5 +1,6 @@
 import time
 import webcrawler as WebCrawler
+from threading import Thread
 import os
 import Queue
 import pygame
@@ -30,8 +31,37 @@ class Canvas:
 		self.screen_size = size
 		self.screen = _screen
 	
+		# Launch webcrawl in background		
+		worker = Thread(target=self.launch_image_crawler_daemon, args=(self.webcrawled_image_pool, self.last_links))
+		worker.setDaemon(True)
+		worker.start()
+		
 	def refresh(self):
-		print('Refreshing....', self.time_since_crawled_image_update)
+		print('Refreshing.... Crawled Image Pool Size:', self.webcrawled_image_pool.qsize())
+		cur_time = time.time()
+		time_since_last_refresh = cur_time - self.last_time
+		self.last_time = cur_time
+		self.time_since_natural_image_update += time_since_last_refresh
+		self.time_since_crawled_image_update += time_since_last_refresh
+		if self.time_since_natural_image_update > self.rate_natural:
+			#print('natural updated. Time since last')
+			self.time_since_nat_image_update = 0
+			self.update_natural_image()
+		if self.time_since_crawled_image_update > self.rate_crawled:
+			#print('webcrawled updated')
+			self.time_since_crawled_image_update = 0
+			self.update_crawled_images()
+			
+		# Convert cur_nat_image_index to a pygame image and display
+		nat_im_path = './' + self.nat_folder +  self.nat_image_names[self.cur_nat_image_index]
+		nat_im = self.create_pygame_image(nat_im_path)
+		
+		# Redraw
+		black = 0, 0, 0
+		self.screen.fill(black)
+		self.screen.blit(nat_im[0], nat_im[1])
+		for im in list(self.cur_webcrawled_images.queue):
+			self.screen.blit(im[0], im[1])
 		cur_time = time.time()
 		time_since_last_refresh = cur_time - self.last_time
 		self.last_time = cur_time
@@ -78,16 +108,33 @@ class Canvas:
 		
 	# Images in pool are stored in tupes of format (pygame image, image dims, local image path)
 	def refill_pool(self):
-		# Make sure len of pool becomes self.pool_max_size
-		# Later: Clean up if statements and put in helper function
+		while(self.webcrawled_image_pool.qsize < self.pool_max_size):
+			print('current size of pool:', self.webcrawled_image_pool.qsize)
+			time.sleep(1)
 		
-		# Refill virtual images
+	def launch_image_crawler_daemon(self, pool, last_links):
+		# Constantly Refill virtual images
+		# Make sure len of pool stays under self.pool_max_size
 		scale = .5
-		self.webcrawled_image_pool, self.last_links = WebCrawler.download_images(self.last_links, self.webcrawled_image_dir, scale, self.screen_size, batch_size=self.pool_max_size)
-		no_links = min(10, len(self.last_links))
-		if no_links == 1:
-			self.last_links = [self.last_links[0]] # First 10 links
-		else:
-			self.last_links = self.last_links[0:no_links] # First link
+		while True:
+			pool_size = pool.qsize()
+			print('Daemon operational. Queue size:', pool.qsize())
+			if self.webcrawled_image_pool.qsize() >= self.pool_max_size:
+				time.sleep(self.rate_crawled)
+				continue
+				
+				
+			add_to_pool, last_links = WebCrawler.download_images(last_links, self.webcrawled_image_dir, scale, self.screen_size, batch_size=self.pool_max_size)
+			no_links = min(10, len(last_links))
+			if no_links == 1:
+				last_links = [last_links[0]] # First 10 links
+			else:
+				last_links = last_links[0:no_links] # First link
+				
+				
+			add_to_pool = list(add_to_pool.queue)
+			for im in add_to_pool:
+				pool.put(im)
+			
   
   
