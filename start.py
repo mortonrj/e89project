@@ -156,8 +156,9 @@ def game_info():
             screen.blit(rendered_text2, my_rect2.topleft)
             screen.blit(rendered_text3, my_rect3.topleft)
 
-        button("Back",150,450,100,50,white,green,main)
-        button("Quick Start",550,450,100,50,white,green,start_game)
+        button("Back",width/4 - 100,height-200,200,50,white,green,game_info)
+        button("Simple Start",2*width/4 - 100,height-200,200,50,white,green,start_game)
+        button("Choose Start",3*width/4 - 100,height-200,200,50,white,green,start_game)
 
         pygame.display.flip()
 
