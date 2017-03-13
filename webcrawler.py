@@ -20,7 +20,7 @@ def download_images(url_list, batch_size=50, screen_size=None):
     for url in images:
         image = urllib.URLopener()
         image_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        image.retrieve(url, './image/webcrawled_images/' + image_name + '.jpg')
+        image.retrieve(url, './webcrawled_images/' + image_name + '.jpg')
     return q, l
 
 def get_images(url):
