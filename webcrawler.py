@@ -7,8 +7,6 @@ import matplotlib
 import random
 import os
 import string
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 import Queue
 from bs4 import BeautifulSoup
 from urllib2 import urlopen
@@ -20,12 +18,10 @@ def download_images(url_list, batch_size=50, screen_size=None):
     if len(images) > batch_size:
         images = images[:batch_size]
     for url in images:
-        cwd = os.getcwd()
-        print(cwd)
         image = urllib.URLopener()
         image_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        image.retrieve(url, './image/virtual_images/' + image_name + '.jpg')
-    return q
+        image.retrieve(url, './image/webcrawled_images/' + image_name + '.jpg')
+    return q, images
 
 def get_images(url):
     soup = make_soup(url)
@@ -60,13 +56,10 @@ def run_crawler(current_pages, path_length):
                 if l not in visited:
                     q.put(l)
                     images.extend(get_images(l))
-        return q, images
+        return q
 
 def main():
     path_length = 10
     current_pages = ["http://www.caltech.edu/"]
     q, images = run_crawler(current_pages, 1)
     print(images)
-# Helpful links:
-# https://www.daniweb.com/programming/software-development/code/440946/display-an-image-from-a-url-tkinter-python
-# https://www.daniweb.com/programming/software-development/code/467528/show-internet-image-with-tkinter
