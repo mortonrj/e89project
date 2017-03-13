@@ -27,18 +27,21 @@ def repopulate_nature_images():
     print(cwd)
     #nature_image_dir = "../../image/nature_images/stop_motion_man_forest"
     nature_image_queue = Queue.Queue()
+
     for file in glob.glob("*.png"):
         image = pygame.image.load(file)
         nature_image_queue.put((image, image.get_rect()))
     return nature_image_queue
 
+
 def main():
+
     pygame.init()
     size = width, height = 1026, 768
     black = 0, 0, 0
 
     # Downloading crawler images:
-    WebCrawler.download_images(['http://www.caltech.edu/'])
+    q = WebCrawler.download_images(['http://www.caltech.edu/'])
 
     screen = pygame.display.set_mode(size)
 
@@ -46,7 +49,7 @@ def main():
     pygame.mixer.pre_init(44100, -16, 2, 2048) # setup mixer to avoid sound lag
     pygame.init()
     pygame.mixer.init()
-    pygame.mixer.music.load('./music/piano.mp3')
+    pygame.mixer.music.load('./music/e89.mp3')
     pygame.mixer.music.play(-1)
 
     # Load image with rectangular area
@@ -56,12 +59,13 @@ def main():
     delete_queue = Queue.Queue()
 
     virtual_image_dir = "./image/virtual_images"
-    nature_image_dir = "../../image/nature_images/stop_motion_man_forest"
+    nature_image_dir = "../../hd_walk"
 
     virtual_image_queue = populate_queue(virtual_image_dir, scale=0.5, screen_size=size)
     nature_image_queue = populate_queue(nature_image_dir)
 
     while 1:
+
         # Fills screen with a color
         screen.fill(black)
 
@@ -91,6 +95,6 @@ def main():
             screen.blit(past_image, past_images[past_image])
 
         pygame.display.flip()
-        pygame.time.wait(600)
+        pygame.time.wait(60)
 
 main()
