@@ -3,6 +3,7 @@ import webcrawler as WebCrawler
 import os
 import Queue
 import pygame
+import glob
 
 class Canvas:
 	def __init__(self, natural, crawled, nat_folder, webcrawled_folder, _screen, size, num_webcrawled_images_to_simultaneously_display):
@@ -54,10 +55,10 @@ class Canvas:
 		self.time_since_crawled_image_update += time_since_last_refresh
 		if self.time_since_natural_image_update > self.rate_natural:
 			time_since_crawled_image_update = 0
-			update_natural_image()
+			self.update_natural_image()
 		if self.time_since_crawled_image_update > self.rate_crawled:
 			time_since_nat_image_update = 0
-			update_crawled_images()
+			self.update_crawled_images()
 			
 		# Convert cur_nat_image_index to a pygame image and display
 		nat_im_path = './' + self.nat_folder +  self.nat_image_names[self.cur_nat_image_index]
@@ -67,15 +68,12 @@ class Canvas:
 		black = 0, 0, 0
 		self.screen.fill(black)
 		self.screen.blit(nat_im[0], nat_im[1])
-		for im in self.cur_webcraweled_images:
+		for im in list(self.cur_webcrawled_images.queue):
 			self.screen.blit(im[0], im[1])
 		
 	def create_pygame_image(self, img_loc):
-		cwd = os.getcwd()
-		os.chdir(img_loc)
-		image = pygame.image.load(image_loc)
+		image = pygame.image.load(img_loc)
 		rect1 = image.get_rect()
-		os.chdir(cwd)
 		return (image, rect1)
 			
 	def update_natural_image(self):
@@ -83,7 +81,7 @@ class Canvas:
 			
 	# TODO eventually: Fade out one image, fade in one image
 	def update_crawled_images(self):
-		if len(self.webcrawled_image_pool) == 0:
+		if self.webcrawled_image_pool.qsize() == 0:
 			self.refill_pool()
 		newest_image = self.webcrawled_image_pool.pop()
 		# Evict image
