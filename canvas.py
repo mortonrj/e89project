@@ -4,6 +4,7 @@ import os
 import Queue
 import pygame
 import glob
+import random
 
 class Canvas:
 	def __init__(self, natural, crawled, nat_folder, webcrawled_folder, _screen, size, num_webcrawled_images_to_simultaneously_display):
@@ -28,35 +29,19 @@ class Canvas:
 		# Used to make sure that we web crawler images that are too big are discarded
 		self.screen_size = size
 		self.screen = _screen
-		
-	def populate_queue(self, img_dir, scale=None, screen_size=None):
-		cwd = os.getcwd()
-		q = Queue.Queue()
-		os.chdir(img_dir)
-		for type in ["*.png", "*.jpg", "*.gif"]:
-			for file in glob.glob(type):
-				image = pygame.image.load(file)
-				rect1 = image.get_rect()
-				if scale:
-					w,h = image.get_size()
-					image = pygame.transform.scale(image, (int(scale*w), int(scale*h)))
-				if screen_size:
-					width, height = screen_size
-					rect1.center = center=(random.randint(0, width), random.randint(0, height))
-				q.put((image, rect1))
-				
-		os.chdir(cwd)
-		return q
-
 	
 	def refresh(self):
-		time_since_last_refresh = time.time() - self.last_time
+		cur_time = time.time()
+		time_since_last_refresh = cur_time - self.last_time
+		self.last_time = cur_time
 		self.time_since_natural_image_update += time_since_last_refresh
 		self.time_since_crawled_image_update += time_since_last_refresh
 		if self.time_since_natural_image_update > self.rate_natural:
+			#print('natural updated. Time since last')
 			time_since_crawled_image_update = 0
 			self.update_natural_image()
 		if self.time_since_crawled_image_update > self.rate_crawled:
+			#print('webcrawled updated')
 			time_since_nat_image_update = 0
 			self.update_crawled_images()
 			
@@ -83,12 +68,13 @@ class Canvas:
 	def update_crawled_images(self):
 		if self.webcrawled_image_pool.qsize() == 0:
 			self.refill_pool()
-		newest_image = self.webcrawled_image_pool.pop()
+		newest_image = self.webcrawled_image_pool.get()
 		# Evict image
-		if len(self.cur_webcraweled_images == self.num_webcrawled_images_to_simultaneously_display):
-			self.cur_webcraweled_images.pop()
-		self.cur_webcraweled_images.push(newest_image)
+		if self.cur_webcrawled_images.qsize() == self.num_webcrawled_images_to_simultaneously_display:
+			self.cur_webcrawled_images.get()
+		self.cur_webcrawled_images.put(newest_image)
 		
+	# Images in pool are stored in tupes of format (pygame image, image dims, local image path)
 	def refill_pool(self):
 		# Make sure len of pool becomes self.pool_max_size
 		# Later: Clean up if statements and put in helper function
@@ -98,9 +84,13 @@ class Canvas:
 		for f in files:
 			os.remove(f)
 		
-		# Refull virtual images
-		q, self.last_links = WebCrawler.download_images(self.last_links)
-		self.last_links = self.last_links[0:min(10, len(self.last_links))] # Last 10 links
-		self.webcrawled_image_pool = self.populate_queue(self.webcrawled_image_dir, scale=0.5, screen_size=self.screen_size)
-
+		# Refill virtual images
+		scale = .5
+		self.webcrawled_image_pool, self.last_links = WebCrawler.download_images(self.last_links, self.webcrawled_image_dir, scale, self.screen_size, batch_size=self.pool_max_size)
+		no_links = min(10, len(self.last_links))
+		if no_links == 1:
+			self.last_links = [self.last_links[0]] # First 10 links
+		else:
+			self.last_links = self.last_links[0:no_links] # First link
+  
   

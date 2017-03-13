@@ -11,26 +11,37 @@ import Queue
 from bs4 import BeautifulSoup
 from urllib2 import urlopen
 import urllib
+import pygame
+		
+all_time_visited = set()
 
-def download_images(url_list, batch_size=50, screen_size=None):
-    """ Returns queue of URLs"""
-    cwd = os.getcwd()
-    print('\n\n\n')
-    print(url_list, batch_size, screen_size)
-    print(cwd)
-    print(url_list)
-    q, images = run_crawler(url_list, 1)
-    print(q)
-    if len(images) > batch_size:
-        images = images[:batch_size]
-    for url in images:
-        cwd = os.getcwd()
-        print(cwd)
-        image = urllib.URLopener()
-        image_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        image.retrieve(url, './webcrawled_images/' + image_name + '.jpg')
-    return q, url_list
-
+def download_images(url_list, webcrawled_image_dir, scale, screen_size, batch_size=50):
+	""" Returns queue of URLs"""
+	print('@@@@@@@@@@@@@ url list:', url_list)
+	cwd = os.getcwd()
+	print('\n\n\n')
+	leftover_links, images = run_crawler(url_list, batch_size)
+	if len(images) > batch_size:
+		images = images[:batch_size]
+	# Images in pool are stored in tupes of format (pygame image, image dims, local image path)
+	image_pool = Queue.Queue()
+	for url in images:
+		cwd = os.getcwd()
+		image = urllib.URLopener()
+		image_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+		im_path = webcrawled_image_dir + image_name + '.jpg'
+		image.retrieve(url, im_path)
+		pygame_image = pygame.image.load(im_path)
+		rect1 = pygame_image.get_rect()
+		w,h = pygame_image.get_size()
+		pygame_image = pygame.transform.scale(pygame_image, (int(scale*w), int(scale*h)))
+		width, height = screen_size
+		rect1.center =(random.randint(0, width), random.randint(0, height))
+		image_pool.put((pygame_image, rect1, im_path))
+			
+	return image_pool, leftover_links
+	
+	
 def get_images(url):
     soup = make_soup(url)
     images = [img for img in soup.findAll('img')]
@@ -45,26 +56,30 @@ def make_soup(url):
     return BeautifulSoup(html, "lxml")
 
 # Returns list containing all hyperlinks
-def run_crawler(current_pages, path_length):
-    q = Queue.Queue()
-    visited = set()
-    for page in current_pages:
-        q.put(page)
-        visited.add(page)
-    images = []
-    while len(visited) <= path_length:
-        page = q.get()
-        visited.add(page)
-        links = Fetcher.fetch_links(page)
-        if links is None:
-            continue
+def run_crawler(current_pages, min_images):
+	global all_time_visited
+	q = Queue.Queue()
+	visited = set()
+	for page in current_pages:
+		q.put(page)
+		visited.add(page)
+	images = []
+	while len(images) < min_images:
+		page = q.get()
+		visited.add(page)
+		all_time_visited.add(page)
+		links = Fetcher.fetch_links(page)
+		if links is None:
+			continue
 
-        for l in links[:10]:
-            if 'caltech.edu' in l and l != 'http://hr.caltech.edu/work/job_openings':
-                if l not in visited:
-                    q.put(l)
-                    images.extend(get_images(l))
-        return q, images
+		for l in links[:10]:
+			if 'caltech.edu' in l and l != 'http://hr.caltech.edu/work/job_openings' and len(l) > 4:
+				if l not in visited and l not in all_time_visited:
+					print('new item added to queue:', l)
+					q.put(l)
+					images.extend(get_images(l))
+	print('$$$$$$$$$$$$$ret val', q.queue, '\n\n', images)
+	return list(q.queue), images
 
 def main():
     path_length = 10
