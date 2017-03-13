@@ -119,18 +119,13 @@ class Canvas:
 	# TODO eventually: Fade out one image, fade in one image
 	def update_crawled_images(self):
 		if self.webcrawled_image_pool.qsize() == 0:
-			self.refill_pool()
+			return
 		newest_image = self.webcrawled_image_pool.get()
 		# Evict image(s)
 		while self.cur_webcrawled_images.qsize() >= self.num_webcrawled_images_to_simultaneously_display:
 			path_to_evicted = self.cur_webcrawled_images.get()[2]
 			os.remove(path_to_evicted)
 		self.cur_webcrawled_images.put(newest_image)
-		
-	# Images in pool are stored in tupes of format (pygame image, image dims, local image path)
-	def refill_pool(self):
-		while(self.webcrawled_image_pool.qsize < self.pool_max_size):
-			time.sleep(1)
 		
 	def launch_image_crawler_daemon(self, pool, last_links):
 		# Constantly Refill virtual images
