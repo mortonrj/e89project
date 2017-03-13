@@ -23,7 +23,7 @@ class Canvas:
 		self.num_webcrawled_images_to_simultaneously_display = num_webcrawled_images_to_simultaneously_display
 		self.cur_webcrawled_images = Queue.Queue()
 		self.webcrawled_image_pool = Queue.Queue()
-		self.pool_max_size = 10
+		self.pool_max_size = 50
 		self.webcrawled_image_dir = webcrawled_folder
 		self.last_links = ['http://www.caltech.edu/']
 
@@ -36,8 +36,29 @@ class Canvas:
 		worker.setDaemon(True)
 		worker.start()
 		
+	def change_nat_rate(self, offset):
+		self.rate_natural += offset
+		if self.rate_natural < 0:
+			self.rate_natural = 0
+		elif self.rate_natural > 3:
+			self.rate_natural = 3
+			
+	def change_crawl_rate(self, offset):
+		self.rate_crawled += offset
+		if self.rate_crawled < .2:
+			self.rate_crawled = .2
+		elif self.rate_crawled > 5:
+			self.rate_crawled = 5
+			
+	def change_simultanous_images(self, offset):
+		self.num_webcrawled_images_to_simultaneously_display += offset
+		if self.num_webcrawled_images_to_simultaneously_display < 0:
+			self.num_webcrawled_images_to_simultaneously_display = 0
+		elif self.rate_crawled > self.pool_max_size / 2:
+			self.num_webcrawled_images_to_simultaneously_display = self.pool_max_size / 2
+		
 	def refresh(self):
-		print('Refreshing.... Crawled Image Pool Size:', self.webcrawled_image_pool.qsize())
+		print('Image Pool Size:', self.webcrawled_image_pool.qsize(), 'Natural rate:', self.rate_natural, 'Crawl rate', self.rate_crawled, 'Simul pics:', self.num_webcrawled_images_to_simultaneously_display)
 		cur_time = time.time()
 		time_since_last_refresh = cur_time - self.last_time
 		self.last_time = cur_time
@@ -45,7 +66,7 @@ class Canvas:
 		self.time_since_crawled_image_update += time_since_last_refresh
 		if self.time_since_natural_image_update > self.rate_natural:
 			#print('natural updated. Time since last')
-			self.time_since_nat_image_update = 0
+			self.time_since_natural_image_update = 0
 			self.update_natural_image()
 		if self.time_since_crawled_image_update > self.rate_crawled:
 			#print('webcrawled updated')
@@ -100,8 +121,8 @@ class Canvas:
 		if self.webcrawled_image_pool.qsize() == 0:
 			self.refill_pool()
 		newest_image = self.webcrawled_image_pool.get()
-		# Evict image
-		if self.cur_webcrawled_images.qsize() == self.num_webcrawled_images_to_simultaneously_display:
+		# Evict image(s)
+		while self.cur_webcrawled_images.qsize() >= self.num_webcrawled_images_to_simultaneously_display:
 			path_to_evicted = self.cur_webcrawled_images.get()[2]
 			os.remove(path_to_evicted)
 		self.cur_webcrawled_images.put(newest_image)
@@ -109,7 +130,6 @@ class Canvas:
 	# Images in pool are stored in tupes of format (pygame image, image dims, local image path)
 	def refill_pool(self):
 		while(self.webcrawled_image_pool.qsize < self.pool_max_size):
-			print('current size of pool:', self.webcrawled_image_pool.qsize)
 			time.sleep(1)
 		
 	def launch_image_crawler_daemon(self, pool, last_links):
@@ -124,7 +144,7 @@ class Canvas:
 				continue
 				
 				
-			add_to_pool, last_links = WebCrawler.download_images(last_links, self.webcrawled_image_dir, scale, self.screen_size, batch_size=self.pool_max_size)
+			add_to_pool, last_links = WebCrawler.download_images(last_links, self.webcrawled_image_dir, scale, self.screen_size, batch_size=10)
 			no_links = min(10, len(last_links))
 			if no_links == 1:
 				last_links = [last_links[0]] # First 10 links
