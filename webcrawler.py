@@ -21,7 +21,7 @@ def download_images(url_list, batch_size=50, screen_size=None):
         image = urllib.URLopener()
         image_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         image.retrieve(url, './image/webcrawled_images/' + image_name + '.jpg')
-    return q, images
+    return q, l
 
 def get_images(url):
     soup = make_soup(url)
@@ -56,7 +56,7 @@ def run_crawler(current_pages, path_length):
                 if l not in visited:
                     q.put(l)
                     images.extend(get_images(l))
-        return q
+        return q, l
 
 def main():
     path_length = 10
