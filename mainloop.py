@@ -43,7 +43,7 @@ def main():
 			#	c.change_nat_rate(1)
 
 		# Check axis
-		axis_reading = .5 * joystick.get_axis(1)
+		axis_reading = .2 * joystick.get_axis(1)
 		c.change_nat_rate(axis_reading)
 		c.change_crawl_rate(axis_reading)
 		

@@ -23,7 +23,7 @@ class Canvas:
 		self.num_webcrawled_images_to_simultaneously_display = num_webcrawled_images_to_simultaneously_display
 		self.cur_webcrawled_images = Queue.Queue()
 		self.webcrawled_image_pool = Queue.Queue()
-		self.pool_max_size = 50
+		self.pool_max_size = 500
 		self.webcrawled_image_dir = webcrawled_folder
 		self.last_links = ['http://www.caltech.edu/']
 
@@ -40,13 +40,13 @@ class Canvas:
 		self.rate_natural += offset
 		if self.rate_natural < 0:
 			self.rate_natural = 0
-		elif self.rate_natural > 3:
-			self.rate_natural = 3
+		elif self.rate_natural > 2:
+			self.rate_natural = 2
 			
 	def change_crawl_rate(self, offset):
 		self.rate_crawled += offset
-		if self.rate_crawled < .2:
-			self.rate_crawled = .2
+		if self.rate_crawled < .3:
+			self.rate_crawled = .3
 		elif self.rate_crawled > 5:
 			self.rate_crawled = 5
 			
@@ -54,8 +54,17 @@ class Canvas:
 		self.num_webcrawled_images_to_simultaneously_display += offset
 		if self.num_webcrawled_images_to_simultaneously_display < 0:
 			self.num_webcrawled_images_to_simultaneously_display = 0
-		elif self.rate_crawled > self.pool_max_size / 2:
-			self.num_webcrawled_images_to_simultaneously_display = self.pool_max_size / 2
+		elif self.num_webcrawled_images_to_simultaneously_display > 20:
+			self.num_webcrawled_images_to_simultaneously_display = 20
+			
+	def shuffle_image_locs(self):
+		l = list(self.cur_webcrawled_images.queue)
+		new_queue = Queue.Queue()
+		width, height = self.screen_size
+		for item in l:
+			item[1].center = (random.randint(0, width), random.randint(0, height))
+			new_queue.put(item)
+		self.cur_webcrawled_images = new_queue
 		
 	def refresh(self):
 		print('Image Pool Size:', self.webcrawled_image_pool.qsize(), 'Natural rate:', self.rate_natural, 'Crawl rate', self.rate_crawled, 'Simul pics:', self.num_webcrawled_images_to_simultaneously_display)
@@ -119,6 +128,7 @@ class Canvas:
 	# TODO eventually: Fade out one image, fade in one image
 	def update_crawled_images(self):
 		if self.webcrawled_image_pool.qsize() == 0:
+			self.shuffle_image_locs()
 			return
 		newest_image = self.webcrawled_image_pool.get()
 		# Evict image(s)
