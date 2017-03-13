@@ -9,7 +9,7 @@ import os
 import pygame
 import pygame.font
 from pygame.locals import *
-#import mainloop as MainLoop
+import mainloop as MainLoop
 
 black = (0,0,0)
 white = (255,255,255)
@@ -122,7 +122,7 @@ def button(msg,x,y,w,h,ic,ac,action=None):
 # Define functions (You can do this in a separate file and then just import it)
 def start_game():
     print("This should do a thing")
-    #MainLoop.main()
+    MainLoop.main()
 
 def game_info():
     screen = pygame.display.get_surface()
