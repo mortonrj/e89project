@@ -27,7 +27,6 @@ def download_images(url_list, webcrawled_image_dir, scale, screen_size, batch_si
     """ Returns queue of URLs"""
     print('@@@@@@@@@@@@@ url list:', url_list)
     cwd = os.getcwd()
-    print('\n\n\n')
     leftover_links, images = run_crawler(url_list, batch_size)
     if len(images) > batch_size:
         images = images[:batch_size]
@@ -51,59 +50,63 @@ def download_images(url_list, webcrawled_image_dir, scale, screen_size, batch_si
 
 
 def get_images(url):
+    print("Get_images about to make soup")
+    print(url)
     soup = make_soup(url)
-    images = [img for img in soup.findAll('img')]
-    print("Made it to get_images")
-    print(images)
-    #compile our unicode list of image links
-    image_links = [each.get('src') for each in images if 'http' in each.get('src')]
 
-    return image_links
+    if soup.findAll('img') <= 0:
+        return []
+    images = [img for img in soup.findAll('img')]
+    #compile our unicode list of image links
+    print("Made it to images")
+    print(images)
+    if len(images) > 0:
+        image_links = set()
+        print(images[0].get('src'))
+        for elem in images:
+            try:
+                if 'http' in elem.get('src'):
+                    image_links.add(elem.get('src'))
+            except:
+                pass
+
+        return list(image_links)
+    return []
 
 def make_soup(url):
-    html = urlopen(url).read()
-    return BeautifulSoup(html, "lxml")
+    try:
+        html = urlopen(url).read()
+        return BeautifulSoup(html, "lxml")
+    except:
+        pass
 
 # Returns list containing all hyperlinks
 def run_crawler(current_pages, min_images):
     global all_time_visited
     q = Queue.Queue()
     visited = set()
-    print("\n\n")
-    print(current_pages)
-    print("\n\n")
     for page in current_pages:
-        print(page)
         q.put(page)
-        print("Queue added page")
         visited.add(page)
-        print("Visited added page")
     images = []
     while len(images) < min_images:
         page = q.get()
-        print("in while loop")
-        print(page)
         visited.add(page)
-        print("hi1")
         all_time_visited.add(page)
-        print("hi1")
         links = Fetcher.fetch_links(page)
-        print("hi1")
         if links is None:
             continue
 
-        print(links)
-
         for l in links[:10]:
             print(l)
-            #if 'caltech.edu' in l and l != 'http://hr.caltech.edu/work/job_openings' and len(l) > 4:
-            signal.alarm(5)
+            signal.alarm(10)
             try:
                 if l not in visited and l not in all_time_visited:
-                    print('new item added to queue:')
-                    print(l)
                     q.put(l)
                     images.extend(get_images(l))
+                    print("\n \n Current number of images")
+                    print(len(images))
+                    print("I have been extended")
             except TimeoutException:
                 continue # continue the for loop if function A takes more than 5 second
             else:
@@ -114,7 +117,7 @@ def run_crawler(current_pages, min_images):
 
 def main():
     path_length = 10
-    current_pages = ["http://www.bing.com/"]
+    current_pages = ["http://www.amazon.com/"]
     q, images = run_crawler(current_pages, 1)
     print(len(images))
 
