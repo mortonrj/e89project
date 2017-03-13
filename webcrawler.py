@@ -21,7 +21,7 @@ def download_images(url_list, batch_size=50, screen_size=None):
         image = urllib.URLopener()
         image_name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(6))
         image.retrieve(url, './webcrawled_images/' + image_name + '.jpg')
-    return q, l
+    return q, url_list
 
 def get_images(url):
     soup = make_soup(url)
